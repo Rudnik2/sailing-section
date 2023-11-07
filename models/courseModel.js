@@ -5,9 +5,32 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  description: String,
-  cost: Number,
+  enrolledStudents: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+  description: {
+    type: String,
+    required: true,
+  },
+  cost: {
+    type: Number,
+    required: true,
+  },
   dates: [Date],
+  courseDurationDays: {
+    type: Number,
+    required: true,
+  },
+  instructorOfTheCourse: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+  registrationFormTemplate: mongoose.Schema.Types.Mixed,
 });
 
 const Course = mongoose.model("Course", courseSchema);

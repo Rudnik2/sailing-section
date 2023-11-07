@@ -1,0 +1,39 @@
+const sortInstructors = (course) => {
+  course.instructorOfTheCourse.sort((a, b) => {
+    // Compare certification level
+    const certificationOrder = [
+      "Instructor Lecturer of the Polish Sailing Association",
+      "PZŻ Sailing Instructor",
+      "PZŻ Sailing Teacher (formerly Junior Sailing Instructor of PZŻ)",
+      "None",
+      // You can add other certifications here
+    ];
+    const certificationLevelA = certificationOrder.indexOf(a.qualifications);
+    const certificationLevelB = certificationOrder.indexOf(b.qualifications);
+    if (certificationLevelA !== certificationLevelB) {
+      return certificationLevelA - certificationLevelB;
+    }
+
+    // Compare number of training courses conducted in Iława
+    if (a.numberOfCoursesInIlawa !== b.numberOfCoursesInIlawa) {
+      return a.numberOfCoursesInIlawa - b.numberOfCoursesInIlawa;
+    }
+
+    // Compare sailing rank
+    const sailingRankOrder = [
+      "Yacht Captain",
+      "Yacht Coastal Skipper / (formerly Yacht Skipper)",
+      "Yacht Sailor",
+    ];
+    const sailingRankA = sailingRankOrder.indexOf(a.sailingRank);
+    const sailingRankB = sailingRankOrder.indexOf(b.sailingRank);
+    if (sailingRankA !== sailingRankB) {
+      return sailingRankA - sailingRankB;
+    }
+
+    // Compare number of training courses conducted outside Iława
+    return a.numberOfCoursesOutsideIlawa - b.numberOfCoursesOutsideIlawa;
+  });
+};
+
+module.exports = sortInstructors;

@@ -9,15 +9,37 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  // Fields specific to instructors
-  qualifications: [String],
-  sailingLicenses: [String],
-  trainingExperience: String,
-  trainingInIlawa: {
-    courses: Number,
+  enrolledCourses: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+    },
+  ],
+  role: {
     type: String,
-    dates: [Date],
+    enum: ["student", "instructor", "admin"],
+    default: "student",
   },
+  // Fields specific to instructors
+  qualifications: {
+    type: String, // Represents the highest certification level
+    enum: [
+      "Instructor Lecturer of the Polish Sailing Association",
+      "PZŻ Sailing Instructor",
+      "PZŻ Sailing Teacher (formerly Junior Sailing Instructor of PZŻ)",
+      "None",
+    ],
+  },
+  numberOfCoursesInIlawa: Number,
+  sailingRank: {
+    type: String,
+    enum: [
+      "Yacht Captain",
+      "Yacht Coastal Skipper / (formerly Yacht Skipper)",
+      "Yacht Sailor",
+    ],
+  },
+  numberOfCoursesOutsideIlawa: Number,
 });
 
 userSchema.plugin(passportLocalMongoose);
