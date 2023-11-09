@@ -10,7 +10,59 @@ const { checkInstructor } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Create a new course
+/**
+ * @swagger
+ * tags:
+ *   name: Courses
+ *   description: API for managing courses and registrations
+ */
+
+/**
+ * @swagger
+ * /courses:
+ *   post:
+ *     summary: Create a new course
+ *     description: Endpoint to create a new course.
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               cost:
+ *                 type: number
+ *               dates:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: date
+ *               courseDurationDays:
+ *                 type: number
+ *             required:
+ *               - name
+ *               - description
+ *               - cost
+ *               - dates
+ *               - courseDurationDays
+ *     responses:
+ *       201:
+ *         description: Course created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ */
 router.post("/", checkInstructor, async (req, res) => {
   try {
     const newCourse = new Course(req.body);
@@ -22,7 +74,24 @@ router.post("/", checkInstructor, async (req, res) => {
   }
 });
 
-// Get all courses
+/**
+ * @swagger
+ * /courses:
+ *   get:
+ *     summary: Get all courses
+ *     description: Endpoint to get a list of all courses.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Course'
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/", async (req, res) => {
   try {
     const courses = await Course.find();
@@ -32,7 +101,30 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get a specific course by ID
+/**
+ * @swagger
+ * /courses/{id}:
+ *   get:
+ *     summary: Get a specific course by ID
+ *     description: Endpoint to get details of a specific course by its ID.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/:id", async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
@@ -45,7 +137,60 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update a course by ID
+/**
+ * @swagger
+ * /courses/{id}:
+ *   put:
+ *     summary: Update a course by ID
+ *     description: Endpoint to update details of a specific course by its ID.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               cost:
+ *                 type: number
+ *               dates:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: date
+ *               courseDurationDays:
+ *                 type: number
+ *             required:
+ *               - name
+ *               - description
+ *               - cost
+ *               - dates
+ *               - courseDurationDays
+ *     responses:
+ *       200:
+ *         description: Course updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put("/:id", checkInstructor, async (req, res) => {
   try {
     const updatedCourse = await Course.findByIdAndUpdate(
@@ -61,7 +206,30 @@ router.put("/:id", checkInstructor, async (req, res) => {
   }
 });
 
-// Delete a course by ID
+/**
+ * @swagger
+ * /courses/{id}:
+ *   delete:
+ *     summary: Delete a course by ID
+ *     description: Endpoint to delete a specific course by its ID.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: No content
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.delete("/:id", checkInstructor, async (req, res) => {
   try {
     await Course.findByIdAndRemove(req.params.id);
@@ -71,7 +239,59 @@ router.delete("/:id", checkInstructor, async (req, res) => {
   }
 });
 
-// Create a new form template for a course
+/**
+ * @swagger
+ * /courses/{courseId}/form-templates:
+ *   post:
+ *     summary: Create a new form template for a course
+ *     description: Endpoint to create or update a form template for a course.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fields:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     fieldName:
+ *                       type: string
+ *                     fieldType:
+ *                       type: string
+ *                       enum: [text, number, date, email]
+ *                     isRequired:
+ *                       type: boolean
+ *                   required:
+ *                     - fieldName
+ *                     - fieldType
+ *                     - isRequired
+ *     responses:
+ *       201:
+ *         description: Form template created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RegistrationForm'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/:courseId/form-templates", checkInstructor, async (req, res) => {
   try {
     const courseId = req.params.courseId;
@@ -93,7 +313,40 @@ router.post("/:courseId/form-templates", checkInstructor, async (req, res) => {
   }
 });
 
-// Create a route for uploading payment confirmation files
+/**
+ * @swagger
+ * /courses/{courseId}/upload-payment-confirmation:
+ *   post:
+ *     summary: Upload payment confirmation for a course
+ *     description: Endpoint to upload a payment confirmation file for a specific course.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               paymentConfirmation:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Payment confirmation file is valid
+ *       400:
+ *         description: Bad request or invalid file
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.post(
   "/:courseId/upload-payment-confirmation",
   upload.single("paymentConfirmation"),

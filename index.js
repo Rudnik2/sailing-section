@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const passport = require("passport");
 const passportConfig = require("./passport-config");
+const { swaggerUi, specs } = require("./swagger");
 
 const Course = require("./models/courseModel");
 const RegistrationForm = require("./models/registrationForm");
@@ -37,6 +38,8 @@ app.use("/user", userRoutes);
 app.get("/", (req, res) => {
   res.send("Server is running properly.");
 });
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

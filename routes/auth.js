@@ -4,7 +4,38 @@ const User = require("../models/user"); // Import your User model
 
 const router = express.Router();
 
-// Registration Route
+/**
+ * @swagger
+ * tags:
+ *   name: Authentication
+ *   description: API for user authentication
+ */
+
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     description: Endpoint to register a new user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Bad request
+ */
 router.post("/register", (req, res) => {
   const { username, password, email } = req.body;
   const newUser = new User({ username, email });
@@ -19,12 +50,45 @@ router.post("/register", (req, res) => {
   });
 });
 
-// Login Route
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Log in user
+ *     description: Endpoint to log in a user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Unauthorized
+ */
 router.post("/login", passport.authenticate("local"), (req, res) => {
   res.json({ message: "Login successful", user: req.user });
 });
 
-// Logout Route
+/**
+ * @swagger
+ * /auth/logout:
+ *   get:
+ *     summary: Log out user
+ *     description: Endpoint to log out a user.
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/logout", (req, res) => {
   req.logout(function (err) {
     if (err) {

@@ -11,9 +11,46 @@ const {
 } = require("../utils/calculateInstructorHierarchy");
 const { sortInstructors } = require("../utils/calculateInstructorHierarchy");
 
-// Registering to a course
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: API for managing user-related operations
+ */
 
-// Register for a course and create a registration form
+/**
+ * @swagger
+ * /user/register/{courseId}:
+ *   post:
+ *     summary: Register for a course and create a registration form
+ *     description: Endpoint to register a user for a course and create a registration form.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             fields:
+ *               exampleField: "exampleValue"
+ *     responses:
+ *       201:
+ *         description: Registration form created successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/register/:courseId", ensureAuthenticated, async (req, res) => {
   try {
     const courseId = req.params.courseId;
@@ -46,7 +83,28 @@ router.post("/register/:courseId", ensureAuthenticated, async (req, res) => {
   }
 });
 
-// Unregister from a course
+/**
+ * @swagger
+ * /user/unregister/{courseId}:
+ *   delete:
+ *     summary: Unregister from a course
+ *     description: Endpoint to unregister a user from a course.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Unregistered from the course
+ *       404:
+ *         description: Registration form not found
+ *       500:
+ *         description: Internal server error
+ */
 router.delete(
   "/unregister/:courseId",
   ensureAuthenticated,
@@ -85,7 +143,26 @@ router.delete(
   }
 );
 
-// Get all registration forms for the logged-in user
+/**
+ * @swagger
+ * /user/registration-forms:
+ *   get:
+ *     summary: Get all registration forms for the logged-in user
+ *     description: Endpoint to get all registration forms for the logged-in user.
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/RegistrationForm'
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/registration-forms", ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user._id; // Assuming you have a user ID in the session
@@ -99,7 +176,24 @@ router.get("/registration-forms", ensureAuthenticated, async (req, res) => {
   }
 });
 
-// Get and edit user profile data
+/**
+ * @swagger
+ * /user/user-profile:
+ *   get:
+ *     summary: Get user profile data
+ *     description: Endpoint to get user profile data for the logged-in user.
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/user-profile", ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user._id; // Assuming you have a user ID in the session
@@ -113,7 +207,30 @@ router.get("/user-profile", ensureAuthenticated, async (req, res) => {
   }
 });
 
-// Fetch a specific user by ID
+/**
+ * @swagger
+ * /user/users-profile/{userId}:
+ *   get:
+ *     summary: Fetch a specific user by ID
+ *     description: Endpoint to fetch details of a specific user by their ID.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/users-profile/:userId", async (req, res) => {
   try {
     const userId = req.params.userId; // Get the user ID from the URL parameter
@@ -131,7 +248,28 @@ router.get("/users-profile/:userId", async (req, res) => {
   }
 });
 
-// Update user data
+/**
+ * @swagger
+ * /user/user-profile:
+ *   put:
+ *     summary: Update user data
+ *     description: Endpoint to update user data for the logged-in user.
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             username: "updatedUser"
+ *             email: "updateduser@example.com"
+ *             // Add other updated user data here
+ *     responses:
+ *       200:
+ *         description: User data updated successfully
+ *       500:
+ *         description: Internal server error
+ */
 router.put("/user-profile", ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user._id; // Assuming you have a user ID in the session
@@ -148,6 +286,26 @@ router.put("/user-profile", ensureAuthenticated, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /user/user-registration-forms:
+ *   get:
+ *     summary: Get user's registration forms for all courses
+ *     description: Endpoint to get all registration forms for courses the logged-in user is registered for.
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/RegistrationForm'
+ *       500:
+ *         description: Internal server error
+ */
 router.get(
   "/user-registration-forms",
   ensureAuthenticated,
@@ -167,7 +325,35 @@ router.get(
   }
 );
 
-// Update user's registration data for a course
+/**
+ * @swagger
+ * /user/form-registration/{courseId}:
+ *   put:
+ *     summary: Update user's registration data for a course
+ *     description: Endpoint to update user's registration data for a specific course.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             fields:
+ *               exampleField: "updatedValue"
+ *     responses:
+ *       200:
+ *         description: Registration data updated successfully
+ *       404:
+ *         description: Registration form not found
+ *       500:
+ *         description: Internal server error
+ */
 router.put(
   "/form-registration/:courseId",
   ensureAuthenticated,
@@ -195,7 +381,30 @@ router.put(
   }
 );
 
-// Enroll an instructor in a course
+/**
+ * @swagger
+ * /user/instructors/enroll/{courseId}:
+ *   post:
+ *     summary: Enroll an instructor in a course
+ *     description: Endpoint to enroll an instructor in a course.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Instructor enrolled in the course
+ *       403:
+ *         description: Only instructors can enroll in courses
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post(
   "/instructors/enroll/:courseId",
   ensureAuthenticated,
@@ -279,7 +488,32 @@ router.post(
   }
 );
 
-// Enroll an instructor in half of a 2-day course
+/**
+ * @swagger
+ * /user/instructors/enroll-half/{courseId}:
+ *   post:
+ *     summary: Enroll an instructor in half of a 2-day course
+ *     description: Endpoint to enroll an instructor in the first day of a 2-day course.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Instructor enrolled in the first day of the 2-day course
+ *       400:
+ *         description: This course is not a 2-day course
+ *       403:
+ *         description: Only instructors can enroll in courses
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Internal server error
+ */
 router.post(
   "/instructors/enroll-half/:courseId",
   ensureAuthenticated,
