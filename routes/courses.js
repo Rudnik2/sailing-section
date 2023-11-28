@@ -6,7 +6,7 @@ const RegistrationForm = require("../models/registrationForm");
 const upload = require("../middleware/upload");
 const pdf = require("pdf-parse");
 require("dotenv").config();
-const { checkInstructor } = require("../middleware/authMiddleware");
+const { checkAdmin } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -63,7 +63,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post("/", checkInstructor, async (req, res) => {
+router.post("/", checkAdmin, async (req, res) => {
   try {
     const newCourse = new Course(req.body);
     const savedCourse = await newCourse.save();
@@ -191,7 +191,7 @@ router.get("/:id", async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.put("/:id", checkInstructor, async (req, res) => {
+router.put("/:id", checkAdmin, async (req, res) => {
   try {
     const updatedCourse = await Course.findByIdAndUpdate(
       req.params.id,
@@ -230,7 +230,7 @@ router.put("/:id", checkInstructor, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.delete("/:id", checkInstructor, async (req, res) => {
+router.delete("/:id", checkAdmin, async (req, res) => {
   try {
     await Course.findByIdAndRemove(req.params.id);
     res.sendStatus(204); // No content
@@ -292,7 +292,7 @@ router.delete("/:id", checkInstructor, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/:courseId/form-templates", checkInstructor, async (req, res) => {
+router.post("/:courseId/form-templates", checkAdmin, async (req, res) => {
   try {
     const courseId = req.params.courseId;
     const formData = req.body; // Form template data

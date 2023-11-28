@@ -2,7 +2,18 @@
 
 // Middleware to check if the user is an instructor
 const checkInstructor = (req, res, next) => {
-  if (req.isAuthenticated() && req.user.role === "instructor") {
+  if (
+    (req.isAuthenticated() && req.user.role === "instructor") ||
+    req.user.role === "admin"
+  ) {
+    return next(); // User is an instructor, proceed
+  }
+  // User is not an instructor, deny access
+  res.status(403).json({ error: "Access denied" });
+};
+
+const checkAdmin = (req, res, next) => {
+  if (req.isAuthenticated() && req.user.role === "admin") {
     return next(); // User is an instructor, proceed
   }
   // User is not an instructor, deny access
@@ -20,5 +31,6 @@ const ensureAuthenticated = (req, res, next) => {
 
 module.exports = {
   checkInstructor,
+  checkAdmin,
   ensureAuthenticated,
 };
