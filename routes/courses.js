@@ -6,7 +6,10 @@ const RegistrationForm = require("../models/registrationForm");
 const upload = require("../middleware/upload");
 const pdf = require("pdf-parse");
 require("dotenv").config();
-const { checkAdmin } = require("../middleware/authMiddleware");
+const {
+  checkAdmin,
+  ensureAuthenticated,
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -23,6 +26,7 @@ const router = express.Router();
  *   post:
  *     summary: Create a new course
  *     description: Endpoint to create a new course.
+ *     tags: [Courses]
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -80,6 +84,7 @@ router.post("/", checkAdmin, async (req, res) => {
  *   get:
  *     summary: Get all courses
  *     description: Endpoint to get a list of all courses.
+ *     tags: [Courses]
  *     responses:
  *       200:
  *         description: Successful response
@@ -107,6 +112,7 @@ router.get("/", async (req, res) => {
  *   get:
  *     summary: Get a specific course by ID
  *     description: Endpoint to get details of a specific course by its ID.
+ *     tags: [Courses]
  *     parameters:
  *       - in: path
  *         name: id
@@ -143,6 +149,7 @@ router.get("/:id", async (req, res) => {
  *   put:
  *     summary: Update a course by ID
  *     description: Endpoint to update details of a specific course by its ID.
+ *     tags: [Courses]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -212,6 +219,7 @@ router.put("/:id", checkAdmin, async (req, res) => {
  *   delete:
  *     summary: Delete a course by ID
  *     description: Endpoint to delete a specific course by its ID.
+ *     tags: [Courses]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -245,6 +253,7 @@ router.delete("/:id", checkAdmin, async (req, res) => {
  *   post:
  *     summary: Create a new form template for a course
  *     description: Endpoint to create or update a form template for a course.
+ *     tags: [Courses]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -262,6 +271,13 @@ router.delete("/:id", checkAdmin, async (req, res) => {
  *             properties:
  *               fields:
  *                 type: array
+ *                 example:
+ *                   - fieldName: "string1"
+ *                     fieldType: "text"
+ *                     isRequired: true
+ *                   - fieldName: "string2"
+ *                     fieldType: "text"
+ *                     isRequired: true
  *                 items:
  *                   type: object
  *                   properties:
@@ -272,10 +288,10 @@ router.delete("/:id", checkAdmin, async (req, res) => {
  *                       enum: [text, number, date, email]
  *                     isRequired:
  *                       type: boolean
- *                   required:
- *                     - fieldName
- *                     - fieldType
- *                     - isRequired
+ *                 required:
+ *                   - fieldName
+ *                   - fieldType
+ *                   - isRequired
  *     responses:
  *       201:
  *         description: Form template created successfully
@@ -319,6 +335,7 @@ router.post("/:courseId/form-templates", checkAdmin, async (req, res) => {
  *   post:
  *     summary: Upload payment confirmation for a course
  *     description: Endpoint to upload a payment confirmation file for a specific course.
+ *     tags: [Courses]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -349,6 +366,7 @@ router.post("/:courseId/form-templates", checkAdmin, async (req, res) => {
  */
 router.post(
   "/:courseId/upload-payment-confirmation",
+  ensureAuthenticated,
   upload.single("paymentConfirmation"),
   async (req, res) => {
     try {

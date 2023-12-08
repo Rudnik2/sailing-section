@@ -24,6 +24,7 @@ const { sortInstructors } = require("../utils/calculateInstructorHierarchy");
  *   post:
  *     summary: Register for a course and create a registration form
  *     description: Endpoint to register a user for a course and create a registration form.
+ *     tags: [Users]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -38,7 +39,14 @@ const { sortInstructors } = require("../utils/calculateInstructorHierarchy");
  *         application/json:
  *           example:
  *             fields:
- *               exampleField: "exampleValue"
+ *               firstName: "Jane"
+ *               lastName: "Smith"
+ *               pesel: "9876543210"
+ *               phoneNumber: "987-564-321"
+ *               cost: 150
+ *               date: "2023-12-01"
+ *               email: "jane@example.com"
+ *
  *     responses:
  *       201:
  *         description: Registration form created successfully
@@ -89,6 +97,7 @@ router.post("/register/:courseId", ensureAuthenticated, async (req, res) => {
  *   delete:
  *     summary: Unregister from a course
  *     description: Endpoint to unregister a user from a course.
+ *     tags: [Users]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -145,43 +154,11 @@ router.delete(
 
 /**
  * @swagger
- * /user/registration-forms:
- *   get:
- *     summary: Get all registration forms for the logged-in user
- *     description: Endpoint to get all registration forms for the logged-in user.
- *     security:
- *       - BearerAuth: []
- *     responses:
- *       200:
- *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/RegistrationForm'
- *       500:
- *         description: Internal server error
- */
-router.get("/registration-forms", ensureAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user._id; // Assuming you have a user ID in the session
-
-    // Find all registration forms associated with the user
-    const forms = await RegistrationForm.find({ userId });
-
-    res.json(forms);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * @swagger
  * /user/user-profile:
  *   get:
  *     summary: Get user profile data
  *     description: Endpoint to get user profile data for the logged-in user.
+ *     tags: [Users]
  *     security:
  *       - BearerAuth: []
  *     responses:
@@ -213,6 +190,7 @@ router.get("/user-profile", ensureAuthenticated, async (req, res) => {
  *   get:
  *     summary: Fetch a specific user by ID
  *     description: Endpoint to fetch details of a specific user by their ID.
+ *     tags: [Users]
  *     parameters:
  *       - in: path
  *         name: userId
@@ -254,6 +232,7 @@ router.get("/users-profile/:userId", async (req, res) => {
  *   put:
  *     summary: Update user data
  *     description: Endpoint to update user data for the logged-in user.
+ *     tags: [Users]
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -263,7 +242,6 @@ router.get("/users-profile/:userId", async (req, res) => {
  *           example:
  *             username: "updatedUser"
  *             email: "updateduser@example.com"
- *             // Add other updated user data here
  *     responses:
  *       200:
  *         description: User data updated successfully
@@ -292,6 +270,7 @@ router.put("/user-profile", ensureAuthenticated, async (req, res) => {
  *   get:
  *     summary: Get user's registration forms for all courses
  *     description: Endpoint to get all registration forms for courses the logged-in user is registered for.
+ *     tags: [Users]
  *     security:
  *       - BearerAuth: []
  *     responses:
@@ -331,6 +310,7 @@ router.get(
  *   put:
  *     summary: Update user's registration data for a course
  *     description: Endpoint to update user's registration data for a specific course.
+ *     tags: [Users]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -387,6 +367,7 @@ router.put(
  *   post:
  *     summary: Enroll an instructor in a course
  *     description: Endpoint to enroll an instructor in a course.
+ *     tags: [Users]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -443,19 +424,33 @@ router.post(
           "None",
           // You can add other certifications here
         ];
+
         const certificationLevelA = certificationOrder.indexOf(
           a.qualifications
         );
         const certificationLevelB = certificationOrder.indexOf(
           b.qualifications
         );
-        if (certificationLevelA !== certificationLevelB) {
-          return certificationLevelA - certificationLevelB;
+
+        // Set index to "None" if the certification is not in the order
+        const certificationLevelAValue =
+          certificationLevelA !== -1
+            ? certificationLevelA
+            : certificationOrder.indexOf("None");
+        const certificationLevelBValue =
+          certificationLevelB !== -1
+            ? certificationLevelB
+            : certificationOrder.indexOf("None");
+
+        if (certificationLevelAValue !== certificationLevelBValue) {
+          return certificationLevelAValue - certificationLevelBValue;
         }
 
-        // Compare number of training courses conducted in Iława
-        if (a.numberOfCoursesInIlawa !== b.numberOfCoursesInIlawa) {
-          return a.numberOfCoursesInIlawa - b.numberOfCoursesInIlawa;
+        const numberOfCoursesInIlawaA = a.numberOfCoursesInIlawa || 0;
+        const numberOfCoursesInIlawaB = b.numberOfCoursesInIlawa || 0;
+
+        if (numberOfCoursesInIlawaA !== numberOfCoursesInIlawaB) {
+          return numberOfCoursesInIlawaB - numberOfCoursesInIlawaA;
         }
 
         // Compare sailing rank
@@ -466,12 +461,23 @@ router.post(
         ];
         const sailingRankA = sailingRankOrder.indexOf(a.sailingRank);
         const sailingRankB = sailingRankOrder.indexOf(b.sailingRank);
-        if (sailingRankA !== sailingRankB) {
-          return sailingRankA - sailingRankB;
+        const sailingRankAValue =
+          sailingRankA !== -1
+            ? sailingRankA
+            : sailingRankOrder.indexOf("Yacht Sailor");
+        const sailingRankBValue =
+          sailingRankB !== -1
+            ? sailingRankB
+            : sailingRankOrder.indexOf("Yacht Sailor");
+
+        if (sailingRankAValue !== sailingRankBValue) {
+          return sailingRankAValue - sailingRankBValue;
         }
 
         // Compare number of training courses conducted outside Iława
-        return a.numberOfCoursesOutsideIlawa - b.numberOfCoursesOutsideIlawa;
+        const numberOfCoursesOutsideIlawaA = a.numberOfCoursesOutsideIlawa || 0;
+        const numberOfCoursesOutsideIlawaB = b.numberOfCoursesOutsideIlawa || 0;
+        return numberOfCoursesOutsideIlawaB - numberOfCoursesOutsideIlawaA;
       });
 
       // Update the course's instructorOfTheCourse with the sorted instructors
@@ -494,6 +500,7 @@ router.post(
  *   post:
  *     summary: Enroll an instructor in half of a 2-day course
  *     description: Endpoint to enroll an instructor in the first day of a 2-day course.
+ *     tags: [Users]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -560,19 +567,33 @@ router.post(
           "None",
           // You can add other certifications here
         ];
+
         const certificationLevelA = certificationOrder.indexOf(
           a.qualifications
         );
         const certificationLevelB = certificationOrder.indexOf(
           b.qualifications
         );
-        if (certificationLevelA !== certificationLevelB) {
-          return certificationLevelA - certificationLevelB;
+
+        // Set index to "None" if the certification is not in the order
+        const certificationLevelAValue =
+          certificationLevelA !== -1
+            ? certificationLevelA
+            : certificationOrder.indexOf("None");
+        const certificationLevelBValue =
+          certificationLevelB !== -1
+            ? certificationLevelB
+            : certificationOrder.indexOf("None");
+
+        if (certificationLevelAValue !== certificationLevelBValue) {
+          return certificationLevelAValue - certificationLevelBValue;
         }
 
-        // Compare number of training courses conducted in Iława
-        if (a.numberOfCoursesInIlawa !== b.numberOfCoursesInIlawa) {
-          return a.numberOfCoursesInIlawa - b.numberOfCoursesInIlawa;
+        const numberOfCoursesInIlawaA = a.numberOfCoursesInIlawa || 0;
+        const numberOfCoursesInIlawaB = b.numberOfCoursesInIlawa || 0;
+
+        if (numberOfCoursesInIlawaA !== numberOfCoursesInIlawaB) {
+          return numberOfCoursesInIlawaB - numberOfCoursesInIlawaA;
         }
 
         // Compare sailing rank
@@ -583,12 +604,23 @@ router.post(
         ];
         const sailingRankA = sailingRankOrder.indexOf(a.sailingRank);
         const sailingRankB = sailingRankOrder.indexOf(b.sailingRank);
-        if (sailingRankA !== sailingRankB) {
-          return sailingRankA - sailingRankB;
+        const sailingRankAValue =
+          sailingRankA !== -1
+            ? sailingRankA
+            : sailingRankOrder.indexOf("Yacht Sailor");
+        const sailingRankBValue =
+          sailingRankB !== -1
+            ? sailingRankB
+            : sailingRankOrder.indexOf("Yacht Sailor");
+
+        if (sailingRankAValue !== sailingRankBValue) {
+          return sailingRankAValue - sailingRankBValue;
         }
 
         // Compare number of training courses conducted outside Iława
-        return a.numberOfCoursesOutsideIlawa - b.numberOfCoursesOutsideIlawa;
+        const numberOfCoursesOutsideIlawaA = a.numberOfCoursesOutsideIlawa || 0;
+        const numberOfCoursesOutsideIlawaB = b.numberOfCoursesOutsideIlawa || 0;
+        return numberOfCoursesOutsideIlawaB - numberOfCoursesOutsideIlawaA;
       });
 
       // Update the course's instructorOfTheCourse with the sorted instructors

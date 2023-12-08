@@ -17,6 +17,7 @@ const router = express.Router();
  *   post:
  *     summary: Register a new user
  *     description: Endpoint to register a new user.
+ *     tags: [Authentication]
  *     requestBody:
  *       required: true
  *       content:
@@ -56,6 +57,7 @@ router.post("/register", (req, res) => {
  *   post:
  *     summary: Log in user
  *     description: Endpoint to log in a user.
+ *     tags: [Authentication]
  *     requestBody:
  *       required: true
  *       content:
@@ -83,6 +85,7 @@ router.post("/login", passport.authenticate("local"), (req, res) => {
  *   get:
  *     summary: Log out user
  *     description: Endpoint to log out a user.
+ *     tags: [Authentication]
  *     responses:
  *       200:
  *         description: Logout successful

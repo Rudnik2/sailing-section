@@ -41,12 +41,11 @@ const registrationFormSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
-      // Optional fields
-      studentIdNumber: String, // Only for PG students
-      azsPgMembershipCardNumber: String, // Only for AZS PG members
+      studentIdNumber: String,
+      azsPgMembershipCardNumber: String,
       tShirtSize: String,
       meals: String,
-      referringSource: String, // Referring Person or Advertising Source
+      referringSource: String,
     },
   ],
 });
