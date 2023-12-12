@@ -1,6 +1,6 @@
 const express = require("express");
 const passport = require("passport");
-const User = require("../models/user"); // Import your User model
+const User = require("../models/user");
 
 const router = express.Router();
 
@@ -95,7 +95,6 @@ router.post("/login", passport.authenticate("local"), (req, res) => {
 router.get("/logout", (req, res) => {
   req.logout(function (err) {
     if (err) {
-      // Handle the error if necessary
       console.error(err);
       return res.status(500).json({ message: "Logout failed" });
     }

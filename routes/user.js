@@ -6,10 +6,6 @@ const RegistrationForm = require("../models/registrationForm");
 const router = express.Router();
 
 const { ensureAuthenticated } = require("../middleware/authMiddleware");
-const {
-  calculateInstructorHierarchy,
-} = require("../utils/calculateInstructorHierarchy");
-const { sortInstructors } = require("../utils/calculateInstructorHierarchy");
 
 /**
  * @swagger
@@ -62,25 +58,21 @@ const { sortInstructors } = require("../utils/calculateInstructorHierarchy");
 router.post("/register/:courseId", ensureAuthenticated, async (req, res) => {
   try {
     const courseId = req.params.courseId;
-    const userId = req.user._id; // Assuming you have a user ID in the session
+    const userId = req.user._id;
     const formData = req.body.fields;
 
-    // Create a new registration form associated with the user
     const registrationForm = new RegistrationForm({
       courseId,
       userId,
       fields: formData,
     });
 
-    // Save the form to the database
     const savedForm = await registrationForm.save();
 
-    // Update the enrolledCourses in the User model
     await User.findByIdAndUpdate(userId, {
       $addToSet: { enrolledCourses: courseId },
     });
 
-    // Update the enrolledStudents in the Course model
     await Course.findByIdAndUpdate(courseId, {
       $addToSet: { enrolledStudents: userId },
     });
@@ -94,7 +86,7 @@ router.post("/register/:courseId", ensureAuthenticated, async (req, res) => {
 /**
  * @swagger
  * /user/unregister/{courseId}:
- *   delete:
+ *   put:
  *     summary: Unregister from a course
  *     description: Endpoint to unregister a user from a course.
  *     tags: [Users]
@@ -114,43 +106,40 @@ router.post("/register/:courseId", ensureAuthenticated, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.delete(
-  "/unregister/:courseId",
-  ensureAuthenticated,
-  async (req, res) => {
-    try {
-      const courseId = req.params.courseId;
-      const userId = req.user._id; // Assuming you have a user ID in the session
+router.put("/unregister/:courseId", ensureAuthenticated, async (req, res) => {
+  try {
+    const courseId = req.params.courseId;
+    const userId = req.user._id;
 
-      // Find the registration form for the user and course
-      const registrationForm = await RegistrationForm.findOne({
-        courseId,
-        userId,
-      });
+    const registrationForm = await RegistrationForm.findOne({
+      courseId,
+      userId,
+      isArchived: false,
+    });
 
-      if (!registrationForm) {
-        return res.status(404).json({ error: "Registration form not found." });
-      }
-
-      // Delete the registration form entry to unregister from the course
-      await RegistrationForm.findByIdAndDelete(registrationForm._id);
-
-      // Remove the course from enrolledCourses in the User model
-      await User.findByIdAndUpdate(userId, {
-        $pull: { enrolledCourses: courseId },
-      });
-
-      // Remove the user from enrolledStudents in the Course model
-      await Course.findByIdAndUpdate(courseId, {
-        $pull: { enrolledStudents: userId },
-      });
-
-      res.json({ message: "Unregistered from the course" });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    if (!registrationForm) {
+      return res.status(404).json({ error: "Registration form not found." });
     }
+
+    await RegistrationForm.findByIdAndUpdate(
+      registrationForm._id,
+      { $set: { isArchived: true } },
+      { new: true }
+    );
+
+    await User.findByIdAndUpdate(userId, {
+      $pull: { enrolledCourses: courseId },
+    });
+
+    await Course.findByIdAndUpdate(courseId, {
+      $pull: { enrolledStudents: userId },
+    });
+
+    res.json({ message: "Unregistered from the course" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-);
+});
 
 /**
  * @swagger
@@ -164,18 +153,13 @@ router.delete(
  *     responses:
  *       200:
  *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
  *       500:
  *         description: Internal server error
  */
 router.get("/user-profile", ensureAuthenticated, async (req, res) => {
   try {
-    const userId = req.user._id; // Assuming you have a user ID in the session
+    const userId = req.user._id;
 
-    // Find the user by ID and exclude sensitive information (e.g., password)
     const user = await User.findById(userId).select("-password");
 
     res.json(user);
@@ -200,10 +184,6 @@ router.get("/user-profile", ensureAuthenticated, async (req, res) => {
  *     responses:
  *       200:
  *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
  *       404:
  *         description: User not found
  *       500:
@@ -211,9 +191,8 @@ router.get("/user-profile", ensureAuthenticated, async (req, res) => {
  */
 router.get("/users-profile/:userId", async (req, res) => {
   try {
-    const userId = req.params.userId; // Get the user ID from the URL parameter
+    const userId = req.params.userId;
 
-    // Find the user by ID and exclude sensitive information (e.g., password)
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
@@ -250,10 +229,9 @@ router.get("/users-profile/:userId", async (req, res) => {
  */
 router.put("/user-profile", ensureAuthenticated, async (req, res) => {
   try {
-    const userId = req.user._id; // Assuming you have a user ID in the session
+    const userId = req.user._id;
     const updatedData = req.body;
 
-    // Find and update the user's data
     const updatedUser = await User.findByIdAndUpdate(userId, updatedData, {
       new: true,
     });
@@ -276,12 +254,6 @@ router.put("/user-profile", ensureAuthenticated, async (req, res) => {
  *     responses:
  *       200:
  *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/RegistrationForm'
  *       500:
  *         description: Internal server error
  */
@@ -290,11 +262,11 @@ router.get(
   ensureAuthenticated,
   async (req, res) => {
     try {
-      const userId = req.user._id; // Assuming you have a user ID in the session
+      const userId = req.user._id;
 
-      // Find the user's registration data for all courses
       const registrationForms = await RegistrationForm.find({
         userId,
+        isArchived: false,
       });
 
       res.json(registrationForms);
@@ -325,7 +297,13 @@ router.get(
  *         application/json:
  *           example:
  *             fields:
- *               exampleField: "updatedValue"
+ *               firstName: "Jane"
+ *               lastName: "Smith"
+ *               pesel: "9876543210"
+ *               phoneNumber: "987-564-321"
+ *               cost: 150
+ *               date: "2023-12-01"
+ *               email: "jane@example.com"
  *     responses:
  *       200:
  *         description: Registration data updated successfully
@@ -340,17 +318,19 @@ router.put(
   async (req, res) => {
     try {
       const courseId = req.params.courseId;
-      const userId = req.user._id; // Assuming you have a user ID in the session
+      const userId = req.user._id;
       const formData = req.body.fields;
 
-      // Check if the registration form exists for the specified courseId and userId
-      const existingForm = await RegistrationForm.findOne({ courseId, userId });
+      const existingForm = await RegistrationForm.findOne({
+        courseId,
+        userId,
+        isArchived: false,
+      });
 
       if (!existingForm) {
         return res.status(404).json({ error: "Registration form not found." });
       }
 
-      // Update the user's registration form for the course
       existingForm.fields = formData;
       await existingForm.save();
 
@@ -392,37 +372,30 @@ router.post(
   async (req, res) => {
     try {
       const courseId = req.params.courseId;
-      const userId = req.user._id; // Assuming you have a user ID in the session
+      const userId = req.user._id;
 
-      // Find the course and check if the user is an instructor
       const course = await Course.findById(courseId);
       if (!course) {
         return res.status(404).json({ error: "Course not found." });
       }
 
-      // Check if the user is an instructor
       if (req.user.role !== "instructor") {
         return res
           .status(403)
           .json({ error: "Only instructors can enroll in courses." });
       }
-      // Push the enrolled instructor into the course
       course.instructorOfTheCourse.push(userId);
 
-      // Fetch user documents for sorting
       const instructors = await User.find({
         _id: { $in: course.instructorOfTheCourse },
       });
 
-      // Sort the instructors based on hierarchy
       instructors.sort((a, b) => {
-        // Compare certification level
         const certificationOrder = [
           "Instructor Lecturer of the Polish Sailing Association",
           "PZŻ Sailing Instructor",
           "PZŻ Sailing Teacher (formerly Junior Sailing Instructor of PZŻ)",
           "None",
-          // You can add other certifications here
         ];
 
         const certificationLevelA = certificationOrder.indexOf(
@@ -432,7 +405,6 @@ router.post(
           b.qualifications
         );
 
-        // Set index to "None" if the certification is not in the order
         const certificationLevelAValue =
           certificationLevelA !== -1
             ? certificationLevelA
@@ -453,7 +425,6 @@ router.post(
           return numberOfCoursesInIlawaB - numberOfCoursesInIlawaA;
         }
 
-        // Compare sailing rank
         const sailingRankOrder = [
           "Yacht Captain",
           "Yacht Coastal Skipper / (formerly Yacht Skipper)",
@@ -474,17 +445,14 @@ router.post(
           return sailingRankAValue - sailingRankBValue;
         }
 
-        // Compare number of training courses conducted outside Iława
         const numberOfCoursesOutsideIlawaA = a.numberOfCoursesOutsideIlawa || 0;
         const numberOfCoursesOutsideIlawaB = b.numberOfCoursesOutsideIlawa || 0;
         return numberOfCoursesOutsideIlawaB - numberOfCoursesOutsideIlawaA;
       });
 
-      // Update the course's instructorOfTheCourse with the sorted instructors
       course.instructorOfTheCourse = instructors.map(
         (instructor) => instructor._id
       );
-      // Save the course with the updated instructors and hierarchy
       await course.save();
 
       res.json({ message: "Instructor enrolled in the course." });
@@ -498,8 +466,8 @@ router.post(
  * @swagger
  * /user/instructors/enroll-half/{courseId}:
  *   post:
- *     summary: Enroll an instructor in half of a 2-day course
- *     description: Endpoint to enroll an instructor in the first day of a 2-day course.
+ *     summary: Enroll an instructor in half of a 2-week course
+ *     description: Endpoint to enroll an instructor in the first day of a 2-week course.
  *     tags: [Users]
  *     security:
  *       - BearerAuth: []
@@ -511,9 +479,9 @@ router.post(
  *           type: string
  *     responses:
  *       200:
- *         description: Instructor enrolled in the first day of the 2-day course
+ *         description: Instructor enrolled in the first day of the 2-week course
  *       400:
- *         description: This course is not a 2-day course
+ *         description: This course is not a 2-week course
  *       403:
  *         description: Only instructors can enroll in courses
  *       404:
@@ -527,45 +495,37 @@ router.post(
   async (req, res) => {
     try {
       const courseId = req.params.courseId;
-      const userId = req.user._id; // Assuming you have a user ID in the session
+      const userId = req.user._id;
 
-      // Find the course and check if the user is an instructor
       const course = await Course.findById(courseId);
       if (!course) {
         return res.status(404).json({ error: "Course not found." });
       }
 
-      // Check if the user is an instructor
       if (req.user.role !== "instructor") {
         return res
           .status(403)
           .json({ error: "Only instructors can enroll in courses." });
       }
 
-      // Check if the course is a 2-day course
-      if (course.courseDurationDays !== 2) {
+      if (course.courseDurationDays !== 14) {
         return res
           .status(400)
-          .json({ error: "This course is not a 2-day course." });
+          .json({ error: "This course is not a 2-week course." });
       }
 
-      // Enroll the instructor in the course
       course.instructorOfTheCourse.push(userId);
 
-      // Fetch user documents for sorting
       const instructors = await User.find({
         _id: { $in: course.instructorOfTheCourse },
       });
 
-      // Sort the instructors based on hierarchy
       instructors.sort((a, b) => {
-        // Compare certification level
         const certificationOrder = [
           "Instructor Lecturer of the Polish Sailing Association",
           "PZŻ Sailing Instructor",
           "PZŻ Sailing Teacher (formerly Junior Sailing Instructor of PZŻ)",
           "None",
-          // You can add other certifications here
         ];
 
         const certificationLevelA = certificationOrder.indexOf(
@@ -575,7 +535,6 @@ router.post(
           b.qualifications
         );
 
-        // Set index to "None" if the certification is not in the order
         const certificationLevelAValue =
           certificationLevelA !== -1
             ? certificationLevelA
@@ -596,7 +555,6 @@ router.post(
           return numberOfCoursesInIlawaB - numberOfCoursesInIlawaA;
         }
 
-        // Compare sailing rank
         const sailingRankOrder = [
           "Yacht Captain",
           "Yacht Coastal Skipper / (formerly Yacht Skipper)",
@@ -617,13 +575,11 @@ router.post(
           return sailingRankAValue - sailingRankBValue;
         }
 
-        // Compare number of training courses conducted outside Iława
         const numberOfCoursesOutsideIlawaA = a.numberOfCoursesOutsideIlawa || 0;
         const numberOfCoursesOutsideIlawaB = b.numberOfCoursesOutsideIlawa || 0;
         return numberOfCoursesOutsideIlawaB - numberOfCoursesOutsideIlawaA;
       });
 
-      // Update the course's instructorOfTheCourse with the sorted instructors
       course.instructorOfTheCourse = instructors.map(
         (instructor) => instructor._id
       );
@@ -631,7 +587,7 @@ router.post(
       await course.save();
 
       res.json({
-        message: "Instructor enrolled in the first day of the 2-day course.",
+        message: "Instructor enrolled in the first day of the 2-week course.",
       });
     } catch (error) {
       res.status(500).json({ error: error.message });

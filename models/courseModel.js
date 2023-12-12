@@ -15,7 +15,19 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  cost: {
+  costForStudents: {
+    type: Number,
+    required: true,
+  },
+  costForWorkers: {
+    type: Number,
+    required: true,
+  },
+  costForAWSMembers: {
+    type: Number,
+    required: true,
+  },
+  regularCost: {
     type: Number,
     required: true,
   },
@@ -31,6 +43,10 @@ const courseSchema = new mongoose.Schema({
     },
   ],
   registrationFormTemplate: mongoose.Schema.Types.Mixed,
+  isArchived: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const Course = mongoose.model("Course", courseSchema);

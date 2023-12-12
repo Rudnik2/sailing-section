@@ -40,7 +40,13 @@ const router = express.Router();
  *                 type: string
  *               description:
  *                 type: string
- *               cost:
+ *               costForStudents:
+ *                 type: number
+ *               costForWorkers:
+ *                 type: number
+ *               costForAWSMembers:
+ *                 type: number
+ *               regularCost:
  *                 type: number
  *               dates:
  *                 type: array
@@ -52,16 +58,15 @@ const router = express.Router();
  *             required:
  *               - name
  *               - description
- *               - cost
+ *               - costForStudents
+ *               - costForWorkers
+ *               - costForAWSMembers
+ *               - regularCost
  *               - dates
  *               - courseDurationDays
  *     responses:
  *       201:
  *         description: Course created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Course'
  *       400:
  *         description: Bad request
  *       401:
@@ -88,12 +93,6 @@ router.post("/", checkAdmin, async (req, res) => {
  *     responses:
  *       200:
  *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Course'
  *       500:
  *         description: Internal server error
  */
@@ -122,10 +121,6 @@ router.get("/", async (req, res) => {
  *     responses:
  *       200:
  *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Course'
  *       404:
  *         description: Course not found
  *       500:
@@ -169,7 +164,13 @@ router.get("/:id", async (req, res) => {
  *                 type: string
  *               description:
  *                 type: string
- *               cost:
+ *               costForStudents:
+ *                 type: number
+ *               costForWorkers:
+ *                 type: number
+ *               costForAWSMembers:
+ *                 type: number
+ *               regularCost:
  *                 type: number
  *               dates:
  *                 type: array
@@ -181,16 +182,15 @@ router.get("/:id", async (req, res) => {
  *             required:
  *               - name
  *               - description
- *               - cost
+ *               - costForStudents
+ *               - costForWorkers
+ *               - costForAWSMembers
+ *               - regularCost
  *               - dates
  *               - courseDurationDays
  *     responses:
  *       200:
  *         description: Course updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Course'
  *       400:
  *         description: Bad request
  *       401:
@@ -215,10 +215,10 @@ router.put("/:id", checkAdmin, async (req, res) => {
 
 /**
  * @swagger
- * /courses/{id}:
- *   delete:
- *     summary: Delete a course by ID
- *     description: Endpoint to delete a specific course by its ID.
+ * /courses/archive/{id}:
+ *   put:
+ *     summary: Archive a course by ID
+ *     description: Endpoint to archive a specific course by its ID.
  *     tags: [Courses]
  *     security:
  *       - BearerAuth: []
@@ -238,10 +238,14 @@ router.put("/:id", checkAdmin, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.delete("/:id", checkAdmin, async (req, res) => {
+router.put("/archive/:id", checkAdmin, async (req, res) => {
   try {
-    await Course.findByIdAndRemove(req.params.id);
-    res.sendStatus(204); // No content
+    await Course.findByIdAndUpdate(
+      req.params.id,
+      { $set: { isArchived: true } },
+      { new: true }
+    );
+    res.sendStatus(204);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -295,10 +299,6 @@ router.delete("/:id", checkAdmin, async (req, res) => {
  *     responses:
  *       201:
  *         description: Form template created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/RegistrationForm'
  *       400:
  *         description: Bad request
  *       401:
@@ -311,9 +311,8 @@ router.delete("/:id", checkAdmin, async (req, res) => {
 router.post("/:courseId/form-templates", checkAdmin, async (req, res) => {
   try {
     const courseId = req.params.courseId;
-    const formData = req.body; // Form template data
+    const formData = req.body;
 
-    // Create or update the form template for the course
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ error: "Course not found." });
@@ -370,25 +369,19 @@ router.post(
   upload.single("paymentConfirmation"),
   async (req, res) => {
     try {
-      // Check if the file is uploaded
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded." });
       }
 
-      // Extract text content from the PDF
       const dataBuffer = req.file.buffer;
       const data = await pdf(dataBuffer);
 
-      // Process the extracted text to validate its content
-      const pdfText = data.text.toLowerCase(); //make this data not case sensitive
+      const pdfText = data.text.toLowerCase();
 
-      // Get the courseId from the URL parameters
       const courseId = req.params.courseId;
 
-      // Ensure the user is authenticated (add your authentication logic here)
       const user = req.user;
 
-      // Check if the user is enrolled in the specified course
       const isEnrolled = user.enrolledCourses.some((course) =>
         course.equals(courseId)
       );
@@ -399,7 +392,6 @@ router.post(
           .json({ error: "User is not enrolled in the specified course." });
       }
 
-      // Find the registration form for the specified course and user
       const registrationForm = await RegistrationForm.findOne({
         courseId,
         userId: user._id,
@@ -412,10 +404,8 @@ router.post(
         });
       }
 
-      // Extract relevant information from the registration form
       const { firstName, lastName, cost } = registrationForm.fields[0];
 
-      // Implement custom validation logic based on the extracted text
       if (
         pdfText.includes(firstName.toLowerCase()) &&
         pdfText.includes(lastName.toLowerCase()) &&

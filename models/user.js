@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   // Fields specific to instructors
   qualifications: {
-    type: String, // Represents the highest certification level
+    type: String,
     enum: [
       "Instructor Lecturer of the Polish Sailing Association",
       "PZŻ Sailing Instructor",
