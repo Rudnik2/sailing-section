@@ -2,9 +2,10 @@ To install required dependencies run: **npm install**
 To run application run: **node index.js**
 
 To run application from docker run these commands:
-**1. docker pull rudnik2/sailing-section:v6**
-**2. docker run -p 3000:3000 rudnik2/sailing-section:v6**
 
+**1. docker pull rudnik2/sailing-section:v6**
+
+**2. docker run -p 3000:3000 rudnik2/sailing-section:v6**
 
 Credentials for user's with given roles for testing purposes:
 
